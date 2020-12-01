@@ -33,13 +33,6 @@ readme = ''
 with open('README.rst') as f:
     readme = f.read()
 
-extras_require = {
-    'docs': [
-        'sphinx==1.8.5',
-        'sphinxcontrib_trio==1.1.1',
-        'sphinxcontrib-websupport',
-    ]
-}
 
 setup(name='IPyC',
       author='dovedevic',
@@ -56,11 +49,10 @@ setup(name='IPyC',
       long_description_content_type="text/x-rst",
       include_package_data=True,
       install_requires=requirements,
-      extras_require=extras_require,
       python_requires='>=3.5.3',
       classifiers=[
         'Development Status :: 5 - Production/Stable',
-        'License :: OSI Approved :: GPL License',
+        'License :: OSI Approved :: GNU General Public License (GPL)',
         'Intended Audience :: Developers',
         'Natural Language :: English',
         'Operating System :: OS Independent',
