@@ -170,7 +170,7 @@ class AsyncIPyCLink:
             self._logger.debug(f"Draining the writer")
             await self._writer.drain()
 
-    async def receive(self, encoding='utf-8', return_on_error=False) -> object:
+    async def receive(self, encoding='utf-8', return_on_error=False):
         """|coro|
 
         Receive a serializable object from the receiving end. If the object is not a custom
