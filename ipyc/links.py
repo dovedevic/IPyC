@@ -127,7 +127,9 @@ class AsyncIPyCLink:
         return self._active
 
     async def send(self, serializable_object: object, drain_immediately=True, encoding='utf-8'):
-        """Send a serializable object to the receiving end. If the object is not a custom
+        """|coro|
+
+        Send a serializable object to the receiving end. If the object is not a custom
         serializable object, python's builtins will be used. If the object is a custom
         serializable, the receiving end must also have this object in their list of custom
         deserializers.
@@ -169,7 +171,9 @@ class AsyncIPyCLink:
             await self._writer.drain()
 
     async def receive(self, encoding='utf-8', return_on_error=False) -> object:
-        """Receive a serializable object from the receiving end. If the object is not a custom
+        """|coro|
+
+        Receive a serializable object from the receiving end. If the object is not a custom
         serializable object, python's builtins will be used, otherwise the custom defined
         deserializer will be used.
 
