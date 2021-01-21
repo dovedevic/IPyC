@@ -75,6 +75,19 @@ class IPyCLink:
 
 
 class AsyncIPyCLink:
+    """Represents an abstracted async socket connection that handles
+    communication between a :class:`AsyncIPyCHost` and a :class:`AsyncIPyCClient`
+    This class is internally managed and typically should not be instantiated on
+    its own.
+    Parameters
+    -----------
+    reader: :class:`asyncio.StreamReader`
+        The managed inbound data reader.
+    writer: :class:`asyncio.StreamWriter`
+        The managed outbound data writer
+    client: Union[:class:`AsyncIPyCHost`, :class:`AsyncIPyCClient`]
+        The communication object that is responsible for managing this connection.
+    """
     def __init__(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter, client):
         self._reader = reader
         self._writer = writer
@@ -84,6 +97,12 @@ class AsyncIPyCLink:
         self._client = client
 
     async def close(self):
+        """|coro|
+
+        Closes all communication channels with a peer and attempts to send them EOF.
+        Informs the parent :class:`AsyncIPyCHost` or :class:`AsyncIPyCClient` of the
+        closed connection.
+        """
         self._logger.debug(f"Beginning to close link")
         self._reader = None
         if self._writer.can_write_eof():
@@ -101,12 +120,36 @@ class AsyncIPyCLink:
         self._logger.debug(f"Closed link")
 
     def is_active(self):
+        """:class:`bool`: Indicates if the communication channels are closed, at EOF, or no longer viable."""
         # Quickly check if the state of the reader changed from the remote
         if not self._reader or self._reader.at_eof() or not self._writer:
             self._active = False
         return self._active
 
-    async def send(self, serializable_object, drain_immediately=True, encoding='utf-8'):
+    async def send(self, serializable_object: object, drain_immediately=True, encoding='utf-8'):
+        """Send a serializable object to the receiving end. If the object is not a custom
+        serializable object, python's builtins will be used. If the object is a custom
+        serializable, the receiving end must also have this object in their list of custom
+        deserializers.
+
+        Parameters
+        ------------
+        serializable_object: :class:`object`
+            The object to be sent to the receiving end.
+        drain_immediately: Optional[:class:`bool`]
+            Whether to flush the output buffer right now or not.
+            Defaults to ``True``.
+        encoding: Optional[:class:`str`]
+            The encoding schema of the serialization. If your object serialization results
+            in non UTF-8 encoding characters, a different encoding scheme must be used. The
+            receiving end must also use this same encoding to decode properly.
+            Defaults to ``utf-8``.
+
+        .. warning::
+            After the result of serialization, either via custom or builtin, the bytes 0x01 and 0x02
+            must not appear anywhere. If your payload does contain these bytes or chars, you must
+            substitute them prior to this function call.
+        """
         if not self.is_active():
             self._logger.debug(f"Attempted to send data when the writer or link is closed! Ignoring.")
             return
@@ -126,6 +169,34 @@ class AsyncIPyCLink:
             await self._writer.drain()
 
     async def receive(self, encoding='utf-8', return_on_error=False) -> object:
+        """Receive a serializable object from the receiving end. If the object is not a custom
+        serializable object, python's builtins will be used, otherwise the custom defined
+        deserializer will be used.
+
+        Parameters
+        ------------
+        encoding: Optional[:class:`str`]
+            The encoding schema of the serialization. If your object serialization results
+            in non UTF-8 encoding characters, a different encoding scheme must be used. The
+            receiving end must also use this same encoding to decode properly.
+            Defaults to ``utf-8``.
+        return_on_error: Optional[:class:`bool`]
+            Whether to continue to listen or return if a deserialization error occurred. Otherwise,
+            wait until the next valid deserialization occurs.
+            Defaults to ``False``.
+
+        .. warning::
+            Ensure that the encoding schema is the same of how it was sent from the receiving end.
+            Ensure that a custom deserializer is provided for the same class name that was sent
+            from the receiving end.
+
+        Returns
+        --------
+        Optional[:class:`object`]
+            The object that was sent from the receiving end. If the deserialization was not successful
+            and :ref:`return_on_error` was set to true, or EOF was encountered resulting in a closed
+            connection, None is returned.
+        """
         if not self.is_active():
             self._logger.debug(f"Attempted to read data when the writer or link is closed! Returning nothing.")
             return None
