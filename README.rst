@@ -149,6 +149,6 @@ You can find more examples in the `examples <https://github.com/dovedevic/IPyC/t
 Useful Links
 ------------
 
-- `Documentation <https://ipyc.readthedocs.io/en/latest/index.html>`_
+- `Documentation <https://ipyc.readthedocs.io/>`_
 - `AsyncIO Documentation <https://docs.python.org/3/library/asyncio.html>`_
 - `Multiprocessing Communication Documentation <https://docs.python.org/3/library/multiprocessing.html>`_

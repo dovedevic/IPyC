@@ -25,7 +25,7 @@ setup(name='IPyC',
       author='dovedevic',
       url='https://github.com/dovedevic/IPyC',
       project_urls={
-        "Documentation": "https://ipyc.readthedocs.io/en/latest/",
+        "Documentation": "https://ipyc.readthedocs.io/",
         "Issue tracker": "https://github.com/dovedevic/IPyC/issues",
       },
       version=version,
