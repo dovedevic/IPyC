@@ -10,6 +10,7 @@ class AsyncIPyCHost:
     """Represents an abstracted async socket listener that connects with
     and listens to :class:`AsyncIPyCClient` clients.
     A number of options can be passed to the :class:`AsyncIPyCHost`.
+
     Parameters
     -----------
     ip_address: Optional[:class:`str`]
@@ -23,10 +24,11 @@ class AsyncIPyCHost:
         The :class:`asyncio.AbstractEventLoop` to use for asynchronous operations.
         Defaults to ``None``, in which case the default event loop is used via
         :func:`asyncio.get_event_loop()`.
+
     Attributes
     -----------
     loop: :class:`asyncio.AbstractEventLoop`
-        The event loop that the client uses for HTTP requests and websocket operations.
+        The event loop that the client uses for asynchronous events.
     """
     def __init__(self, ip_address: str='localhost', port:  int=9999, loop=None):
         self._ip_address = ip_address
@@ -97,9 +99,12 @@ class AsyncIPyCHost:
         Example
         ---------
         .. code-block:: python3
-            @client.on_connect
+
+            host = AsyncIPyCHost()
+
+            @host.on_connect
             async def connectionMade(link: AsyncIPyCLink):
-                print('A connection was made!!')
+                print('A connection was made!')
         Raises
         --------
         TypeError
@@ -152,9 +157,9 @@ class AsyncIPyCHost:
     async def start(self, *args):
         """|coro|
 
-        A shorthand coroutine for :meth:`asyncio.start_server`. Any
-        arguments supplied are passed to :ref:`asyncio.start_server()`
-        and afterward to :ref:`loop.create_server()`. See the asyncio
+        A shorthand coroutine for :func:`asyncio.start_server`. Any
+        arguments supplied are passed to :func:`asyncio.start_server()`
+        and afterward to :func:`asyncio.loop.create_server()`. See the asyncio
         documentation for these arguments and their use.
 
         """
@@ -175,7 +180,7 @@ class AsyncIPyCHost:
 
             This function must be the last function to call due to the fact that it
             is blocking. That means that anything being called after this function
-            or executed call will not happen until this line closes or terminates.
+            or executed will not happen until this host closes or terminates.
         """
         try:
             self.loop.add_signal_handler(signal.SIGINT, lambda: self.loop.stop())
@@ -233,6 +238,7 @@ class AsyncIPyCClient:
     """Represents an abstracted async socket client that connects to
     and communicates with :class:`AsyncIPyCHost` hosts.
     A number of options can be passed to the :class:`AsyncIPyCClient`.
+
     Parameters
     -----------
     ip_address: Optional[:class:`str`]
@@ -243,10 +249,11 @@ class AsyncIPyCClient:
         The :class:`asyncio.AbstractEventLoop` to use for asynchronous operations.
         Defaults to ``None``, in which case the default event loop is used via
         :func:`asyncio.get_event_loop()`.
+
     Attributes
     -----------
     loop: :class:`asyncio.AbstractEventLoop`
-        The event loop that the client uses for HTTP requests and websocket operations.
+        The event loop that the client uses for asynchronous events.
     """
     def __init__(self, ip_address: str='localhost', port:  int=9999, loop=None):
         self._ip_address = ip_address
@@ -262,9 +269,9 @@ class AsyncIPyCClient:
     async def connect(self, *args) -> AsyncIPyCLink:
         """|coro|
 
-        A shorthand coroutine for :meth:`asyncio.open_connection`. Any
-        arguments supplied are passed to :ref:`asyncio.open_connection()`
-        See the asyncio documentation for these arguments and their use.
+        A shorthand coroutine for :func:`asyncio.open_connection`. Any
+        arguments supplied are directly passed to this method; See the
+        asyncio documentation for these arguments and their use.
 
         Returns
         -------
