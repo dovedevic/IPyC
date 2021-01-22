@@ -9,6 +9,7 @@ class IPyCHost:
     """Represents an abstracted synchronous socket listener that connects with
     and listens to :class:`IPyCClient` clients.
     A number of options can be passed to the :class:`IPyCHost`.
+
     Parameters
     -----------
     ip_address: Optional[:class:`str`]
@@ -16,7 +17,7 @@ class IPyCHost:
     port: Optional[:class:`int`]
         The port the listener binds to. This defaults to ``9999``. Check
         your system to make sure this port is not used by another service.
-        To use multiple :class:`AsyncIPyCHost` hosts, ensure the ports are
+        To use multiple :class:`IPyCHost` hosts, ensure the ports are
         different between instantiations.
     """
     def __init__(self, ip_address: str='localhost', port:  int=9999):
@@ -38,8 +39,7 @@ class IPyCHost:
         return self._connections
 
     def close(self):
-        """Closes all :class:`IPyCLink` connections and stops the internal listener.
-        """
+        """Closes all :class:`IPyCLink` connections and stops the internal listener."""
         if self._closed:
             return
         self._closed = True
@@ -47,7 +47,14 @@ class IPyCHost:
             connection.close()
         self._server.close()
 
-    def wait_for_client(self):
+    def wait_for_client(self) -> IPyCLink:
+        """Starts listening for :class:`IPyCClient` clients to connect.
+
+        Returns
+        -------
+        :class:`IPyCLink`
+            The connection that has been established with a :class:`IPyCClient`.
+        """
         self._logger.info("Starting to wait for a client...")
         if not self.is_closed():
             connection = IPyCLink(self._server.accept(), self)
@@ -64,6 +71,7 @@ class IPyCClient:
     """Represents an abstracted synchronous socket client that connects to
     and communicates with :class:`IPyCHost` hosts.
     A number of options can be passed to the :class:`IPyCClient`.
+
     Parameters
     -----------
     ip_address: Optional[:class:`str`]
@@ -87,9 +95,9 @@ class IPyCClient:
             self._link.close()
         self._link = None
 
-    def connect(self):
-        """A shorthand coroutine for :meth:`asyncio.open_connection`. Any
-        arguments supplied are passed to :ref:`asyncio.open_connection()`
+    def connect(self) -> IPyCLink:
+        """A shorthand coroutine for `asyncio.open_connection`. Any
+        arguments supplied are directly fed to that method.
         See the asyncio documentation for these arguments and their use.
 
         Returns
