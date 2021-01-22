@@ -34,6 +34,15 @@ with open('README.rst') as f:
     readme = f.read()
 
 
+extras_require = {
+    'docs': [
+        'sphinx==3.0.3',
+        'sphinxcontrib_trio==1.1.2',
+        'sphinxcontrib-websupport',
+    ]
+}
+
+
 setup(name='IPyC',
       author='dovedevic',
       url='https://github.com/dovedevic/IPyC',
