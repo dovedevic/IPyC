@@ -28,6 +28,8 @@ Contents
    asyncipyc
    connection
    serialization
+   examples
+   logging_setup
 
 Installing
 -----------------
