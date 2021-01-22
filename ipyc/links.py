@@ -13,11 +13,12 @@ class IPyCLink:
     communication between a :class:`IPyCHost` and a :class:`IPyCClient`
     This class is internally managed and typically should not be instantiated on
     its own.
+
     Parameters
     -----------
     connection: :class:`multiprocessing.connection.Connection`
         The managed socket connection.
-    client: Union[:class:`AsyncIPyCHost`, :class:`AsyncIPyCClient`]
+    client: Union[:class:`IPyCHost`, :class:`IPyCClient`]
         The communication object that is responsible for managing this connection.
     """
     def __init__(self, connection: Connection, client):
@@ -51,6 +52,11 @@ class IPyCLink:
         serializable, the receiving end must also have this object in their list of custom
         deserializers.
 
+        .. warning::
+            After the result of serialization, either via custom or builtin, the bytes ``0x01`` and ``0x02``
+            must not appear anywhere. If your payload does contain these bytes or chars, you must
+            substitute them prior to this function call.
+
         Parameters
         ------------
         serializable_object: :class:`object`
@@ -61,10 +67,6 @@ class IPyCLink:
             receiving end must also use this same encoding to decode properly.
             Defaults to ``utf-8``.
 
-        .. warning::
-            After the result of serialization, either via custom or builtin, the bytes 0x01 and 0x02
-            must not appear anywhere. If your payload does contain these bytes or chars, you must
-            substitute them prior to this function call.
         """
         if not self.is_active():
             self._logger.debug(f"Attempted to send data when the link is closed! Ignoring.")
@@ -82,7 +84,7 @@ class IPyCLink:
         self._connection.send(packet.construct(encoding=encoding))
 
     def receive(self, encoding='utf-8', return_on_error=False):
-        """Receive a serializable object from the receiving end. If the object is not a custom
+        """Receive a serializable object from the other end. If the object is not a custom
         serializable object, python's builtins will be used, otherwise the custom defined
         deserializer will be used.
 
@@ -98,17 +100,12 @@ class IPyCLink:
             wait until the next valid deserialization occurs.
             Defaults to ``False``.
 
-        .. warning::
-            Ensure that the encoding schema is the same of how it was sent from the receiving end.
-            Ensure that a custom deserializer is provided for the same class name that was sent
-            from the receiving end.
-
         Returns
         --------
         Optional[:class:`object`]
-            The object that was sent from the receiving end. If the deserialization was not successful
-            and :ref:`return_on_error` was set to true, or EOF was encountered resulting in a closed
-            connection, None is returned.
+            The object that was sent from the sending end. If the deserialization was not successful
+            and ``return_on_error`` was set to ``True``, or EOF was encountered resulting in a closed
+            connection, ``None`` is returned.
         """
         if not self.is_active():
             self._logger.debug(f"Attempted to read data when link is closed! Returning nothing.")
@@ -155,14 +152,14 @@ class IPyCLink:
         Parameters
         ------------
         timeout: Optional[:class:`float`]
-            The number of seconds to wait to see if data is available. If set to None, poll will block
-            forever until data is ready to be read. If set to 0, return a result immediately.
+            The number of seconds to wait to see if data is available. If set to ``None``, poll will block
+            forever until data is ready to be read. If set to ``0``, return a result immediately.
             Defaults to ``0.0``.
 
         Returns
         --------
         :class:`bool`
-            True if data is ready to be received, False otherwise.
+            ``True`` if data is ready to be received, ``False`` otherwise.
         """
         return self._connection.poll(timeout=timeout)
 
@@ -172,6 +169,7 @@ class AsyncIPyCLink:
     communication between a :class:`AsyncIPyCHost` and a :class:`AsyncIPyCClient`
     This class is internally managed and typically should not be instantiated on
     its own.
+
     Parameters
     -----------
     reader: :class:`asyncio.StreamReader`
@@ -227,6 +225,11 @@ class AsyncIPyCLink:
         serializable, the receiving end must also have this object in their list of custom
         deserializers.
 
+        .. warning::
+            After the result of serialization, either via custom or builtin, the bytes ``0x01`` and ``0x02``
+            must not appear anywhere. If your payload does contain these bytes or chars, you must
+            substitute them prior to this function call.
+
         Parameters
         ------------
         serializable_object: :class:`object`
@@ -240,10 +243,6 @@ class AsyncIPyCLink:
             receiving end must also use this same encoding to decode properly.
             Defaults to ``utf-8``.
 
-        .. warning::
-            After the result of serialization, either via custom or builtin, the bytes 0x01 and 0x02
-            must not appear anywhere. If your payload does contain these bytes or chars, you must
-            substitute them prior to this function call.
         """
         if not self.is_active():
             self._logger.debug(f"Attempted to send data when the writer or link is closed! Ignoring.")
@@ -266,7 +265,7 @@ class AsyncIPyCLink:
     async def receive(self, encoding='utf-8', return_on_error=False):
         """|coro|
 
-        Receive a serializable object from the receiving end. If the object is not a custom
+        Receive a serializable object from the other end. If the object is not a custom
         serializable object, python's builtins will be used, otherwise the custom defined
         deserializer will be used.
 
@@ -282,17 +281,12 @@ class AsyncIPyCLink:
             wait until the next valid deserialization occurs.
             Defaults to ``False``.
 
-        .. warning::
-            Ensure that the encoding schema is the same of how it was sent from the receiving end.
-            Ensure that a custom deserializer is provided for the same class name that was sent
-            from the receiving end.
-
         Returns
         --------
         Optional[:class:`object`]
-            The object that was sent from the receiving end. If the deserialization was not successful
-            and :ref:`return_on_error` was set to true, or EOF was encountered resulting in a closed
-            connection, None is returned.
+            The object that was sent from the sending end. If the deserialization was not successful
+            and ``return_on_error`` was set to ``True``, or EOF was encountered resulting in a closed
+            connection, ``None`` is returned.
         """
         if not self.is_active():
             self._logger.debug(f"Attempted to read data when the writer or link is closed! Returning nothing.")
