@@ -6,77 +6,110 @@ from .links import IPyCLink
 
 
 class IPyCHost:
-    def __init__(self, ip_address: str='localhost', port:  int=9999, authentication_password: bytes=None, start_listening=False, limit_connections=None):
-        self.__ip_address = ip_address
-        self.__port = port
-        self.__logger = logging.getLogger(self.__class__.__name__)
-        self.__continue_listening = True
-        self.__limit_connections = limit_connections or -1
-        self.__connections = []
+    """Represents an abstracted synchronous socket listener that connects with
+    and listens to :class:`IPyCClient` clients.
+    A number of options can be passed to the :class:`IPyCHost`.
+    Parameters
+    -----------
+    ip_address: Optional[:class:`str`]
+        The IP address start listening on. This defaults to ``localhost``.
+    port: Optional[:class:`int`]
+        The port the listener binds to. This defaults to ``9999``. Check
+        your system to make sure this port is not used by another service.
+        To use multiple :class:`AsyncIPyCHost` hosts, ensure the ports are
+        different between instantiations.
+    """
+    def __init__(self, ip_address: str='localhost', port:  int=9999):
+        self._ip_address = ip_address
+        self._port = port
+        self._logger = logging.getLogger(self.__class__.__name__)
+        self._logger.info(f"Binding to address {ip_address}:{port}")
+        self._server = Listener((ip_address, port))
+        self._closed = False
+        self._connections = set()
 
-        self.__logger.info(f"Binding to address {ip_address}:{port}{' with auth' if authentication_password else ''}")
-        self.__listener = Listener((ip_address, port), authkey=bytes(authentication_password) if authentication_password else None)
+    def is_closed(self):
+        """:class:`bool`: Indicates if the underlying socket listener is closed or no longer listening."""
+        return self._closed
 
-        if start_listening:
-            self.wait_for_client()
+    @property
+    def connections(self):
+        """:class:`set`: Returns the set of all active :class:`IPyCLink` connections the host is handling."""
+        return self._connections
 
     def close(self):
-        self.__listener.close()
-        for connection in self.__connections:
+        """Closes all :class:`IPyCLink` connections and stops the internal listener.
+        """
+        if self._closed:
+            return
+        self._closed = True
+        for connection in list(self.connections):
             connection.close()
+        self._server.close()
 
     def wait_for_client(self):
-        self.__logger.info("[IPyCHost] Starting to wait for a client...")
-        if self.__continue_listening and (self.__limit_connections > 0 or self.__limit_connections == -1):
-            connection = IPyCLink(self.__listener.accept())
-            if self.__limit_connections != -1:
-                self.__limit_connections -= 1
-            self.__connections.append(connection)
-            self.__logger.debug("[IPyCHost] Successfully connected to the client")
+        self._logger.info("Starting to wait for a client...")
+        if not self.is_closed():
+            connection = IPyCLink(self._server.accept(), self)
+            self._connections.add(connection)
             return connection
-        elif not self.__continue_listening:
-            raise ConnectionRefusedError("Cannot connect to any more clients since the host client was instructed to stop.")
-        elif self.__limit_connections == 0 and self.__limit_connections != -1:
-            raise ConnectionRefusedError("Cannot connect to any more clients since the number of allowed connections was spent.")
 
 
 class IPyCMaster(IPyCHost):
-    """
-    Pseudo-class for IPyCHost
-    """
+    """Pseudo-class for IPyCHost"""
     pass
 
 
 class IPyCClient:
-    def __init__(self, ip_address: str='localhost', port:  int=9999, authentication_password: bytes=None, start_connecting=False):
-        self.__ip_address = ip_address
-        self.__port = port
-        self.__logger = logging.getLogger(self.__class__.__name__)
-        self.__connection = None
-        self.__stored_auth = authentication_password
-
-        if start_connecting:
-            self.connect()
+    """Represents an abstracted synchronous socket client that connects to
+    and communicates with :class:`IPyCHost` hosts.
+    A number of options can be passed to the :class:`IPyCClient`.
+    Parameters
+    -----------
+    ip_address: Optional[:class:`str`]
+        The IP address to connect to. This defaults to ``localhost``.
+    port: Optional[:class:`int`]
+        The port to target at the host IP address. This defaults to ``9999``.
+    """
+    def __init__(self, ip_address: str='localhost', port:  int=9999):
+        self._ip_address = ip_address
+        self._port = port
+        self._logger = logging.getLogger(self.__class__.__name__)
+        self._link = None
+        self._closed = False
 
     def close(self):
-        if self.__connection:
-            self.__connection.close()
+        """Closes the :class:`IPyCLink` connection and stops the client connection."""
+        if self._closed:
+            return
+        self._closed = True
+        if self._link:
+            self._link.close()
+        self._link = None
 
     def connect(self):
-        self.__logger.info("[IPyCClient] Starting to connect to the host...")
-        connection = Client((self.__ip_address, self.__port), authkey=bytes(self.__stored_auth) if self.__stored_auth else None)
-        self.__connection = IPyCLink(connection)
-        del self.__stored_auth
-        self.__logger.debug("[IPyCClient] Successfully connected to the host")
-        return self.__connection
+        """A shorthand coroutine for :meth:`asyncio.open_connection`. Any
+        arguments supplied are passed to :ref:`asyncio.open_connection()`
+        See the asyncio documentation for these arguments and their use.
+
+        Returns
+        -------
+        :class:`IPyCLink`
+            The connection that has been established with a :class:`IPyCHost`.
+        """
+        self._logger.info("Starting to connect to the host...")
+        connection = Client((self._ip_address, self._port))
+        self._link = IPyCLink(connection, self)
+        return self._link
 
     @property
-    def connection(self):
-        return self.__connection
+    def connections(self):
+        """:class:`set`: Returns the set of all active :class:`IPyCLink` connections the client is handling.
+        The number of connections is always either one or none.
+        """
+        return {self._link} if self._link else None
 
 
 class IPyCSlave(IPyCClient):
-    """
-    Pseudo-class for IPyCClient
-    """
+    """Pseudo-class for IPyCClient"""
     pass
