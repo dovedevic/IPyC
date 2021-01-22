@@ -15,7 +15,7 @@ __title__ = 'ipyc'
 __author__ = 'dovedevic'
 __license__ = 'MIT'
 __copyright__ = 'Copyright 2020-present dovedevic'
-__version__ = '1.1.0r'
+__version__ = '1.1.0'
 
 __path__ = __import__('pkgutil').extend_path(__path__, __name__)
 
