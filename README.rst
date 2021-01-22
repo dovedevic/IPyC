@@ -7,6 +7,9 @@ IPyC - Python InterProcess Communication
 .. image:: https://img.shields.io/pypi/pyversions/IPyC.svg
    :target: https://pypi.python.org/pypi/IPyC
    :alt: PyPI supported Python versions
+.. image:: https://readthedocs.org/projects/ipyc/badge/?version=latest
+   :target: https://pypi.python.org/pypi/IPyC
+   :alt: Sphinx Build
 
 An elegant and modern Python IPC implementation using multiprocessing and asyncio. IPyC comes in two flavors, synchronous and asynchronous, both using the same backend allowing you to pick and chose to your needs.
 
