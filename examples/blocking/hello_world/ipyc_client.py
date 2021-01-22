@@ -1,16 +1,14 @@
 import logging
+
 from ipyc import IPyCClient
 
-logging.basicConfig(level=logging.DEBUG)
+# logging.basicConfig(level=logging.DEBUG)
+
+print(f'Connecting to the host...', end=' ')
 client = IPyCClient()
-
-host = client.connect()
-
-response = host.receive()
-print("The host sent us a", type(response), ":", response)
-message = "Hello Host!"
-print('Sending to the host:', message)
-host.send(message)
-
-host.close()
+link = client.connect()
+print(f'connected!\nSending "Hello World!"...', end=' ')
+link.send("Hello World!")
+print(f'sent!\nClosing connection...', end=' ')
 client.close()
+print(f'closed!')
